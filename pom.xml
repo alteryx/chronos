@@ -4,7 +4,7 @@
 
     <groupId>com.airbnb</groupId>
     <artifactId>chronos</artifactId>
-    <version>2.1.0-mesos-${mesos.version}-csd-2-SNAPSHOT</version>
+    <version>2.1.0-csd-2-SNAPSHOT</version>
     <inceptionYear>2012</inceptionYear>
 
     <prerequisites>
@@ -570,4 +570,16 @@
             </plugin>
         </plugins>
     </reporting>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>${distRepo.snapshots.id}</id>
+            <url>${distRepo.snapshots.url}</url>
+        </snapshotRepository>
+        <repository>
+            <id>${distRepo.releases.id}</id>
+            <url>${distRepo.releases.url}</url>
+        </repository>
+    </distributionManagement>
+
 </project>
