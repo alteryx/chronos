@@ -3,7 +3,7 @@ package org.apache.mesos.chronos.utils
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
 import org.apache.mesos.chronos.scheduler.jobs.constraints.{EqualsConstraint, LikeConstraint}
-import org.apache.mesos.chronos.scheduler.jobs.{BaseJob, DependencyBasedJob, InternalScheduleBasedJob, ScheduleBasedJob}
+import org.apache.mesos.chronos.scheduler.jobs._
 import org.joda.time.format.{ISOPeriodFormat, ISODateTimeFormat}
 
 /**
@@ -180,32 +180,51 @@ class JobSerializer extends JsonSerializer[BaseJob] {
       case schedJob: ScheduleBasedJob =>
         json.writeFieldName("schedule")
         json.writeString(schedJob.schedule)
+        json.writeFieldName("scheduleType")
+        json.writeString(schedJob.scheduleType.toString)
         json.writeFieldName("scheduleTimeZone")
         json.writeString(schedJob.scheduleTimeZone)
       case iSchedJob: InternalScheduleBasedJob =>
         json.writeFieldName("scheduleTimeZone")
         json.writeString(iSchedJob.scheduleTimeZone)
+
+        json.writeFieldName("scheduleType")
+        json.writeString(iSchedJob.scheduleData.scheduleType.toString)
+
         json.writeFieldName("scheduleData")
         json.writeStartObject()
 
-        json.writeFieldName("schedule")
-        json.writeString(iSchedJob.scheduleData.schedule)
-        json.writeFieldName("scheduleTimeZone")
-        json.writeString(iSchedJob.scheduleData.scheduleTimeZone)
-        json.writeFieldName("originTime")
-        json.writeString(iSchedJob.scheduleData.originTime.toString(ISODateTimeFormat.dateTime))
-        json.writeFieldName("invocationTime")
-        json.writeString(iSchedJob.scheduleData.invocationTime.toString(ISODateTimeFormat.dateTime))
-        json.writeFieldName("offset")
-        json.writeNumber(iSchedJob.scheduleData.offset)
+        iSchedJob.scheduleData match {
+          case CronSchedule(schedule, scheduleTimeZone, invocationTime, lastExecutionTime, cron) =>
+            json.writeFieldName("schedule")
+            json.writeString(schedule)
+            json.writeFieldName("scheduleTimeZone")
+            json.writeString(scheduleTimeZone)
+            json.writeFieldName("invocationTime")
+            json.writeString(invocationTime.toString(ISODateTimeFormat.dateTime))
+            json.writeFieldName("lastExecutionTime")
+            json.writeString(lastExecutionTime.toString(ISODateTimeFormat.dateTime))
 
-        iSchedJob.scheduleData.recurrences.foreach { r =>
-          json.writeFieldName("recurrences")
-          json.writeNumber(r)
+          case Iso8601Schedule(schedule, scheduleTimeZone, invocationTime, originTime, offset, recurrences, period) =>
+            json.writeFieldName("schedule")
+            json.writeString(schedule)
+            json.writeFieldName("scheduleTimeZone")
+            json.writeString(scheduleTimeZone)
+            json.writeFieldName("originTime")
+            json.writeString(originTime.toString(ISODateTimeFormat.dateTime))
+            json.writeFieldName("invocationTime")
+            json.writeString(invocationTime.toString(ISODateTimeFormat.dateTime))
+            json.writeFieldName("offset")
+            json.writeNumber(offset)
+
+            iSchedJob.scheduleData.recurrences.foreach { r =>
+              json.writeFieldName("recurrences")
+              json.writeNumber(r)
+            }
+
+            json.writeFieldName("period")
+            json.writeString(period.toString(ISOPeriodFormat.standard()))
         }
-
-        json.writeFieldName("period")
-        json.writeString(iSchedJob.scheduleData.period.toString(ISOPeriodFormat.standard()))
 
         json.writeEndObject()
     }

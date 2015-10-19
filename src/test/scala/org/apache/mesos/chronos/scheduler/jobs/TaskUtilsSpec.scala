@@ -10,8 +10,8 @@ class TaskUtilsSpec extends SpecificationWithJUnit with Mockito {
     "Get taskId" in {
       val schedule = "R/2012-01-01T00:00:01.000Z/P1M"
       val arguments = "-a 1 -b 2"
-      val job1 = new ScheduleBasedJob(schedule, "sample-name", "sample-command", arguments = List(arguments))
-      val job2 = new ScheduleBasedJob(schedule, "sample-name", "sample-command")
+      val job1 = new ScheduleBasedJob(schedule, Iso8601Type, "sample-name", "sample-command", arguments = List(arguments))
+      val job2 = new ScheduleBasedJob(schedule, Iso8601Type, "sample-name", "sample-command")
       val ts = 1420843781398L
       val due = new DateTime(ts)
 

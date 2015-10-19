@@ -85,7 +85,7 @@ class SerDeTest extends SpecificationWithJUnit {
         LikeConstraint("rack", "rack-[1-3]")
       )
 
-      val a = new ScheduleBasedJob("FOO/BAR/BAM", "A", "noop", Minutes.minutes(5).toPeriod, 10L, 20L,
+      val a = new ScheduleBasedJob("FOO/BAR/BAM", Iso8601Type, "A", "noop", Minutes.minutes(5).toPeriod, 10L, 20L,
         "fooexec", "fooflags", 7, "foo@bar.com", "Foo", "Test schedule-based job", "TODAY",
         "YESTERDAY", true, container = container, environmentVariables = environmentVariables,
         shell = true, arguments = arguments, softError = true, constraints = constraints)

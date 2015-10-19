@@ -14,7 +14,7 @@ class JobUtilsSpec extends SpecificationWithJUnit with Mockito {
     val config = new SchedulerConfiguration {}
     val store = new MesosStatePersistenceStore(mockZKClient, config)
     val startTime = "R1/2012-01-01T00:00:01.000Z/PT1M"
-    val job = new InternalScheduleBasedJob(scheduleData = Schedule.parse(startTime).get, "sample-name", "sample-command")
+    val job = new InternalScheduleBasedJob(scheduleData = Schedules.parse(startTime).get, "sample-name", "sample-command")
     val mockScheduler = mock[JobScheduler]
 
     store.persistJob(job)
@@ -24,7 +24,7 @@ class JobUtilsSpec extends SpecificationWithJUnit with Mockito {
   }
 
   "Can skip forward a job" in {
-    val schedule = Schedule.parse("R/2012-01-01T00:00:01.000Z/PT1M").get
+    val schedule = Schedules.parse("R/2012-01-01T00:00:01.000Z/PT1M").get
     val job = new InternalScheduleBasedJob(schedule, "sample-name", "sample-command")
     val now = new DateTime()
 
@@ -37,7 +37,7 @@ class JobUtilsSpec extends SpecificationWithJUnit with Mockito {
   }
 
   "Can skip forward a job with a monthly period" in {
-    val schedule = Schedule.parse("R/2012-01-01T00:00:01.000Z/P1M").get
+    val schedule = Schedules.parse("R/2012-01-01T00:00:01.000Z/P1M").get
     val job = new InternalScheduleBasedJob(schedule, "sample-name", "sample-command")
     val now = new DateTime()
 
@@ -51,7 +51,7 @@ class JobUtilsSpec extends SpecificationWithJUnit with Mockito {
   }
 
   "Can get job with arguments" in {
-    val schedule = Schedule.parse("R/2012-01-01T00:00:01.000Z/P1M").get
+    val schedule = Schedules.parse("R/2012-01-01T00:00:01.000Z/P1M").get
     val arguments = "--help"
     val command = "sample-command"
     val commandWithArguments = command + " " + arguments

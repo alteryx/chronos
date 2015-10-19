@@ -46,7 +46,7 @@ object JobUtils {
   
   def convertJobToStored(job: BaseJob): Option[StoredJob] = job match {
     case j: ScheduleBasedJob =>
-      Schedule.parse(j.schedule, j.scheduleTimeZone) map { parsedSched =>
+      Schedules.parse(j.schedule, j.scheduleTimeZone) map { parsedSched =>
         InternalScheduleBasedJob(
           parsedSched,
           scheduleTimeZone = j.scheduleTimeZone,
@@ -91,7 +91,8 @@ object JobUtils {
 
   def convertInternalScheduleToExternalScheduled(j: InternalScheduleBasedJob): ScheduleBasedJob = {
     ScheduleBasedJob(
-      schedule = j.scheduleData.toZeroOffsetISO8601Representation,
+      schedule = j.scheduleData.toStringRepresentation,
+      scheduleType = j.scheduleData.scheduleType,
       scheduleTimeZone = j.scheduleTimeZone,
       name = j.name,
       command = j.command,
