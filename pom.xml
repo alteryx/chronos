@@ -25,7 +25,7 @@
     <cassandra-driver-core.version>2.1.0</cassandra-driver-core.version>
     <chaos.version>0.6.3</chaos.version>
     <commons-math3.version>3.2</commons-math3.version>
-    <cron-utils.version>3.1.0</cron-utils.version>
+    <cron-utils.version>3.1.1</cron-utils.version>
     <curator-framework.version>2.6.0</curator-framework.version>
     <guava.version>16.0.1</guava.version>
     <jgrapht.version>0.9.1</jgrapht.version>

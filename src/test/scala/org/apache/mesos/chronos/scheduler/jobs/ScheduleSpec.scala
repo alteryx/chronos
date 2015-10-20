@@ -51,25 +51,37 @@ class ScheduleSpec extends SpecificationWithJUnit {
 
     "Cron: Handle getting the next occurance properly" in {
 
-      val now = DateTime.parse("2012-02-29T01:00:00.000Z").withZoneRetainFields(DateTimeZone.UTC)
-      val maybeSchedule = Schedules.parse("0 0 * * *", currentTime = now, scheduleType = CronType)
+      def utcTime(s: String) = DateTime.parse(s).withZoneRetainFields(DateTimeZone.UTC)
+
+      val now = utcTime("2012-02-25T01:00:00.000Z")
+      val maybeSchedule = Schedules.parse("0 0 * * *", timeZoneStr = "UTC", currentTime = now, scheduleType = CronType)
 
       maybeSchedule.isDefined must_== true
       val asCron = maybeSchedule.get.asInstanceOf[CronSchedule]
 
-      val expectedNext = DateTime.parse("2012-03-01T00:00:00.000Z").withZoneRetainFields(DateTimeZone.UTC)
+      val expectedInvocation = utcTime("2012-02-26T00:00:00.000Z")
+      val expectedNext = utcTime("2012-02-27T00:00:00.000Z")
+
+      asCron.invocationTime must_== expectedInvocation
       asCron.next.get.invocationTime must_== expectedNext
     }
 
     "Cron: handle time zones" in {
-      val now = DateTime.parse("2012-02-29T01:00:00.000Z").withZoneRetainFields(DateTimeZone.forID("US/Chicago"))
-      val maybeSchedule = Schedules.parse("0 0 * * *", currentTime = now, scheduleType = CronType)
+
+      def centralTime(s: String) = DateTime.parse(s).withZoneRetainFields(DateTimeZone.forID("US/Central"))
+
+      val now = centralTime("2012-02-29T03:00:00.000Z").withZone(DateTimeZone.UTC)
+
+      val maybeSchedule = Schedules.parse("1 1 * * *", timeZoneStr = "US/Central", currentTime = now, scheduleType = CronType)
 
       maybeSchedule.isDefined must_== true
       val asCron = maybeSchedule.get.asInstanceOf[CronSchedule]
 
-      val expectedNext = DateTime.parse("2012-03-01T00:00:00.000Z").withZoneRetainFields(DateTimeZone.forID("US/Chicago"))
-      asCron.next.get.invocationTime must_== expectedNext
+      val expectedInvocation = centralTime("2012-03-01T01:01:00.000Z")
+      val expectedNext = centralTime("2012-03-02T01:01:00.000Z")
+
+      asCron.invocationTime must_== expectedInvocation.withZone(DateTimeZone.UTC)
+      asCron.next.get.invocationTime must_== expectedNext.withZone(DateTimeZone.UTC)
     }
   }
 }

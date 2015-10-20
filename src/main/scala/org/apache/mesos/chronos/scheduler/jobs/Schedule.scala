@@ -1,6 +1,5 @@
 package org.apache.mesos.chronos.scheduler.jobs
 
-import java.util.TimeZone
 import java.util.logging.Logger
 
 import com.cronutils.model.{Cron, CronType => CronTypeEnum}
@@ -61,10 +60,10 @@ case class CronSchedule(@JsonProperty schedule: String,
   val recurrences = None
   val scheduleType = CronType
 
-  override def next: Option[CronSchedule] = {
+  lazy val next: Option[CronSchedule] = {
     val tz = if(scheduleTimeZone != "") DateTimeZone.forID(scheduleTimeZone) else DateTimeZone.UTC
     val currentTimeUserTZ = invocationTime.withZone(tz)
-    val nextExecUserTZ = ExecutionTime.forCron(cron).nextExecution(invocationTime)
+    val nextExecUserTZ = ExecutionTime.forCron(cron).nextExecution(currentTimeUserTZ)
     val nextExec = nextExecUserTZ.withZone(DateTimeZone.UTC)
 
     Some(copy(invocationTime = nextExec, lastExecutionTime = invocationTime))
@@ -95,7 +94,7 @@ object Schedules {
     }
   }
 
-  def parseCronSchedule(scheduleStr: String, timeZoneStr: String = "", currentTime: DateTime = DateTime.now(DateTimeZone.UTC)): Option[CronSchedule] = {
+  def parseCronSchedule(scheduleStr: String, timeZoneStr: String = "UTC", currentTime: DateTime = DateTime.now(DateTimeZone.UTC)): Option[CronSchedule] = {
     Try(parseCron(scheduleStr)) match {
       case Failure(e) =>
         log.warning(s"Failed to parse cron schedule: $scheduleStr, error was ${e.toString}")
@@ -109,17 +108,6 @@ object Schedules {
   def parseCron(scheduleStr: String): Cron = {
     new CronParser(cronDefinition).parse(scheduleStr)
   }
-
-//  private def toUTC(dateTime: DateTime, timeZoneStr: String) = {
-//    timeZoneStr match {
-//      case "" =>
-//        dateTime
-//
-//      case timeZone =>
-//        val timeZone = DateTimeZone.forTimeZone(TimeZone.getTimeZone(timeZoneStr))
-//        dateTime.withZoneRetainFields(timeZone)
-//    }
-//  }
 
   // replace with multiplied by?
   def addPeriods(origin: DateTime, period: Period, number: Int): DateTime = {

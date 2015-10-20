@@ -68,15 +68,29 @@ class ScheduleStreamSpec extends SpecificationWithJUnit {
 
     "Generate cron schedules the same way" in {
 
-      // todo: fix for time zone
-      val now = DateTime.parse("2015-10-19T14:00:00.000Z").withZoneRetainFields(DateTimeZone.UTC)
+      def utcTime(s: String) = DateTime.parse(s).withZoneRetainFields(DateTimeZone.UTC)
 
-      val oneAM = Schedules.parseCronSchedule("0 1 * * *").get
+      val now = utcTime("2015-10-19T14:00:00.000Z")
+
+      val oneAM = Schedules.parseCronSchedule("0 1 * * *", currentTime = now).get
       val stream = new ScheduleStream("name", oneAM)
 
-      stream.head must_== ("name", DateTime.parse("2015-10-20T01:00:00.000Z"))
-      stream.tail.get.head must_== ("name", DateTime.parse("2015-10-21T01:00:00.000Z"))
-      stream.tail.get.tail.get.head must_== ("name", DateTime.parse("2015-10-22T01:00:00.000Z"))
+      stream.head._2.invocationTime must_== utcTime("2015-10-20T01:00:00.000Z")
+      stream.tail.get.head._2.invocationTime must_== utcTime("2015-10-21T01:00:00.000Z")
+      stream.tail.get.tail.get.head._2.invocationTime must_== utcTime("2015-10-22T01:00:00.000Z")
+    }
+
+    "Generate cron schedules for other time zones" in {
+      def chicagoTime(s: String) = DateTime.parse(s).withZoneRetainFields(DateTimeZone.forID("US/Central"))
+
+      val now = chicagoTime("2015-10-19T14:00:00.000Z")
+
+      val oneAM = Schedules.parseCronSchedule("0 1 * * *", timeZoneStr = "US/Central", currentTime = now).get
+      val stream = new ScheduleStream("name", oneAM)
+
+      stream.head._2.invocationTime must_== chicagoTime("2015-10-20T01:00:00.000Z").withZone(DateTimeZone.UTC)
+      stream.tail.get.head._2.invocationTime must_== chicagoTime("2015-10-21T01:00:00.000Z").withZone(DateTimeZone.UTC)
+      stream.tail.get.tail.get.head._2.invocationTime must_== chicagoTime("2015-10-22T01:00:00.000Z").withZone(DateTimeZone.UTC)
     }
   }
 }
