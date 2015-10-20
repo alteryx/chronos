@@ -181,7 +181,7 @@ class JobSerializer extends JsonSerializer[BaseJob] {
         json.writeFieldName("schedule")
         json.writeString(schedJob.schedule)
         json.writeFieldName("scheduleType")
-        json.writeString(schedJob.scheduleType.toString)
+        json.writeString(schedJob.scheduleType.name)
         json.writeFieldName("scheduleTimeZone")
         json.writeString(schedJob.scheduleTimeZone)
       case iSchedJob: InternalScheduleBasedJob =>
@@ -189,7 +189,7 @@ class JobSerializer extends JsonSerializer[BaseJob] {
         json.writeString(iSchedJob.scheduleTimeZone)
 
         json.writeFieldName("scheduleType")
-        json.writeString(iSchedJob.scheduleData.scheduleType.toString)
+        json.writeString(iSchedJob.scheduleData.scheduleType.name)
 
         json.writeFieldName("scheduleData")
         json.writeStartObject()

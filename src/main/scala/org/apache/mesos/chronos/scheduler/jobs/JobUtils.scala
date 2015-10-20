@@ -46,7 +46,7 @@ object JobUtils {
   
   def convertJobToStored(job: BaseJob): Option[StoredJob] = job match {
     case j: ScheduleBasedJob =>
-      Schedules.parse(j.schedule, j.scheduleTimeZone) map { parsedSched =>
+      Schedules.parse(j.schedule, j.scheduleTimeZone, scheduleType = j.scheduleType) map { parsedSched =>
         InternalScheduleBasedJob(
           parsedSched,
           scheduleTimeZone = j.scheduleTimeZone,

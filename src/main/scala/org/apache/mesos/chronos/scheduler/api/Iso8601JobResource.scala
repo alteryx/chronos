@@ -11,6 +11,8 @@ import com.codahale.metrics.annotation.Timed
 import com.google.common.base.Charsets
 import com.google.inject.Inject
 
+import scala.util.Try
+
 /**
  * The REST API to the iso8601 (timed, cron-like) component of the scheduler.
  * @author Florian Leibert (flo@leibert.de)
@@ -44,8 +46,15 @@ class Iso8601JobResource @Inject()(
         log.info("Received request for job:" + newJob.toString)
         require(JobUtils.isValidJobName(newJob.name),
           "the job's name is invalid. Allowed names: '%s'".format(JobUtils.jobNamePattern.toString()))
-        if (!Iso8601Expressions.canParse(newJob.schedule, newJob.scheduleTimeZone))
-          return Response.status(Response.Status.BAD_REQUEST).build()
+
+        val canParse = newJob.scheduleType match {
+          case Iso8601Type => Iso8601Expressions.canParse(newJob.schedule, newJob.scheduleTimeZone)
+          case CronType => Try(Schedules.parseCron(newJob.schedule)).isSuccess
+        }
+
+        require(canParse,
+          s"the job has an invalid schedule expression ${newJob.schedule} " +
+          s"for type ${newJob.scheduleType}")
 
         val newStoredJob = JobUtils.convertJobToStored(newJob).get
 
@@ -57,9 +66,6 @@ class Iso8601JobResource @Inject()(
       } else {
         val oldJob = oldJobOpt.get
 
-        if (!Iso8601Expressions.canParse(newJob.schedule, newJob.scheduleTimeZone)) {
-          return Response.status(Response.Status.BAD_REQUEST).build()
-        }
         val newStoredJob = JobUtils.convertJobToStored(newJob).get
 
         oldJob match {

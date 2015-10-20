@@ -146,9 +146,17 @@ object Schedules {
 }
 
 object ScheduleType {
-  def parse(s: String): Option[ScheduleType] = List(Iso8601Type, CronType).find(_.toString.toLowerCase == s.toLowerCase)
+  def parse(s: String): Option[ScheduleType] = List(Iso8601Type, CronType).find(_.name.toLowerCase == s.toLowerCase)
 }
 
-sealed trait ScheduleType
-case object Iso8601Type extends ScheduleType
-case object CronType extends ScheduleType
+sealed trait ScheduleType {
+  def name: String
+}
+
+case object Iso8601Type extends ScheduleType {
+  val name = "Iso8601"
+}
+
+case object CronType extends ScheduleType {
+  val name = "Cron"
+}

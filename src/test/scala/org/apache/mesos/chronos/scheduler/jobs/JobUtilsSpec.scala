@@ -70,4 +70,19 @@ class JobUtilsSpec extends SpecificationWithJUnit with Mockito {
 
     JobUtils.isValidJobName(jobName)
   }
+
+  "Converts a job to internal representation" in {
+    val requested = ScheduleBasedJob(schedule = "* * * * *", name = "job", scheduleType = CronType, scheduleTimeZone = "UTC", command = "foo")
+
+    val maybeJob = JobUtils.convertJobToStored(requested).map(_.asInstanceOf[InternalScheduleBasedJob])
+    maybeJob.isDefined must_== true
+    val s = maybeJob.get.scheduleData
+    s.scheduleType must_== CronType
+    s.toStringRepresentation must_== "* * * * *"
+    s.scheduleTimeZone must_== "UTC"
+
+    val backToExternal = JobUtils.convertInternalScheduleToExternalScheduled(maybeJob.get)
+
+    backToExternal must_== requested
+  }
 }
