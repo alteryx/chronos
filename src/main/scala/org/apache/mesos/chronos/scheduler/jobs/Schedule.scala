@@ -11,7 +11,9 @@ import org.joda.time.{DateTimeZone, DateTime, Period}
 
 import scala.util.{Failure, Success, Try}
 
-
+/**
+ * Base trait for all schedule types
+ */
 sealed trait Schedule extends Product { self =>
 
   type SType <: Schedule { type SType = self.SType }
@@ -25,6 +27,17 @@ sealed trait Schedule extends Product { self =>
   def toStringRepresentation: String
 }
 
+/**
+ * A schedule that uses ISO 8601 repeating interval notation
+ *
+ * @param schedule the text representation of the schedule
+ * @param scheduleTimeZone the time zone the schedule should be used in
+ * @param invocationTime the time this schedule needs to be invoked (UTC)
+ * @param originTime the root time that the ISO 8601 schedule was started (UTC)
+ * @param offset the number of executions after the origin that have completed
+ * @param recurrences the number of remaining executions, or -1 if this is an infinite schedule
+ * @param period the time between executions
+ */
 case class Iso8601Schedule(@JsonProperty schedule: String,
                            @JsonProperty scheduleTimeZone: String,
                            @JsonProperty invocationTime: DateTime,
@@ -51,6 +64,15 @@ case class Iso8601Schedule(@JsonProperty schedule: String,
   }
 }
 
+/**
+ * A Unix Cron schedule
+ *
+ * @param schedule the text representation of this schedule
+ * @param scheduleTimeZone the time zone the schedule should be executed from
+ * @param invocationTime the time to execute this schedule (UTC)
+ * @param lastExecutionTime the last time this schedule was run (UTC)
+ * @param cron the parsed Cron object that is used to perform execution time planning
+ */
 case class CronSchedule(@JsonProperty schedule: String,
                         @JsonProperty scheduleTimeZone: String,
                         @JsonProperty invocationTime: DateTime,
@@ -73,9 +95,17 @@ case class CronSchedule(@JsonProperty schedule: String,
 }
 
 object Schedules {
-  val log = Logger.getLogger(getClass.getName)
-  val cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronTypeEnum.UNIX)
+  private val log = Logger.getLogger(getClass.getName)
+  private val cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronTypeEnum.UNIX)
 
+  /**
+   * Parses a text representation of a schedule into a Schedule object, or None if the parsing fails
+   * @param scheduleStr the string representation of the schedule
+   * @param timeZoneStr the time zone to execute the schedule in
+   * @param scheduleType the type of schedule (Iso8601Type or CronType)
+   * @param currentTime the current DateTime in UTC
+   * @return
+   */
   def parse(scheduleStr: String,
             timeZoneStr: String = "",
             scheduleType: ScheduleType = Iso8601Type,
