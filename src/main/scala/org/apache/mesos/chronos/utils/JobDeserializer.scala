@@ -20,7 +20,6 @@ object JobDeserializer {
  * @author Florian Leibert (flo@leibert.de)
  */
 class JobDeserializer extends JsonDeserializer[BaseJob] {
-
   def deserialize(jsonParser: JsonParser, ctxt: DeserializationContext): BaseJob = {
     val codec = jsonParser.getCodec
 
@@ -194,12 +193,12 @@ class JobDeserializer extends JsonDeserializer[BaseJob] {
       }
     }
 
-    var parentList = scala.collection.mutable.ListBuffer[String]()
+    def optionGet(n: JsonNode, name: String): Option[JsonNode] = if(n.has(name)) Some(n.get(name)) else None
+    def getOrEmptyString(n: JsonNode, name: String): String = optionGet(n, name).map(_.asText()).getOrElse("")
+
     if (node.has("parents")) {
-      for (parent <- node.path("parents")) {
-        parentList += parent.asText
-      }
-      new DependencyBasedJob(parents = parentList.toSet,
+
+      new DependencyBasedJob(parents = node.path("parents").map(_.asText()).toSet,
         name = name,
         command = command,
         epsilon = epsilon,
@@ -230,8 +229,15 @@ class JobDeserializer extends JsonDeserializer[BaseJob] {
         dataProcessingJobType = dataProcessingJobType,
         constraints = constraints)
     } else if (node.has("schedule")) {
-      val scheduleTimeZone = if (node.has("scheduleTimeZone")) node.get("scheduleTimeZone").asText else ""
+
+      val scheduleTimeZone = getOrEmptyString(node, "scheduleTimeZone")
+      val scheduleType = optionGet(node, "scheduleType")
+        .map(_.asText())
+        .flatMap(ScheduleType.parse)
+        .getOrElse(Iso8601Type)
+
       new ScheduleBasedJob(node.get("schedule").asText,
+        scheduleType = scheduleType,
         name = name,
         command = command,
         epsilon = epsilon,
@@ -263,20 +269,38 @@ class JobDeserializer extends JsonDeserializer[BaseJob] {
         dataProcessingJobType = dataProcessingJobType,
         constraints = constraints)
     } else if (node.has("scheduleData")) {
+
+      val scheduleType = optionGet(node, "scheduleType")
+        .flatMap(node => ScheduleType.parse(node.asText()))
+        .getOrElse(Iso8601Type)
+
       val scheduleDataNode: JsonNode = node.get("scheduleData")
+      val schedule = scheduleType match {
+        case Iso8601Type =>
+          val schedule = scheduleDataNode.get("schedule").asText()
+          val timeZone = scheduleDataNode.get("scheduleTimeZone").asText()
 
-      val schedule = scheduleDataNode.get("schedule").asText()
-      val scheduleTimeZone = scheduleDataNode.get("scheduleTimeZone").asText()
+          val origin = DateTime.parse(scheduleDataNode.get("originTime").asText())
+          val invocation = DateTime.parse(scheduleDataNode.get("invocationTime").asText())
+          val offset = scheduleDataNode.get("offset").asLong()
+          val recurrences = optionGet(scheduleDataNode, "recurrences").map(_.asLong())
+          val period = Period.parse(scheduleDataNode.get("period").asText())
 
+          Iso8601Schedule(schedule, timeZone, origin, invocation, offset, recurrences, period)
 
-      val originTime = DateTime.parse(scheduleDataNode.get("originTime").asText())
-      val invocationTime = DateTime.parse(scheduleDataNode.get("invocationTime").asText())
-      val offset = scheduleDataNode.get("offset").asLong()
-      val recurrences = if (scheduleDataNode.has("recurrences")) Some(scheduleDataNode.get("recurrences").asLong()) else None
-      val period = Period.parse(scheduleDataNode.get("period").asText())
+        case CronType =>
+          val schedule = scheduleDataNode.get("schedule").asText()
+          val scheduleTimeZone = scheduleDataNode.get("scheduleTimeZone").asText()
+
+          val lastExecutionTime= DateTime.parse(scheduleDataNode.get("lastExecutionTime").asText())
+          val invocationTime = DateTime.parse(scheduleDataNode.get("invocationTime").asText())
+          val cron = Schedules.parseCron(schedule)
+
+          CronSchedule(schedule, scheduleTimeZone, invocationTime, lastExecutionTime, cron)
+      }
 
       new InternalScheduleBasedJob(
-        Schedule(schedule, scheduleTimeZone, originTime, invocationTime, offset, recurrences, period),
+        scheduleData = schedule,
         name = name,
         command = command,
         epsilon = epsilon,
@@ -305,6 +329,7 @@ class JobDeserializer extends JsonDeserializer[BaseJob] {
     } else {
       /* schedule now */
       new ScheduleBasedJob("R1//PT24H",
+        scheduleType = Iso8601Type,
         name = name,
         command = command,
         epsilon = epsilon,

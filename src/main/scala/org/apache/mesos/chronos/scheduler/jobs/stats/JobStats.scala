@@ -334,7 +334,7 @@ class JobStats @Inject()(clusterBuilder: Option[Cluster.Builder], config: Cassan
     var jobParents:Option[java.util.Set[String]] = None
     job match {
       case job: InternalScheduleBasedJob =>
-        jobSchedule = Some(job.scheduleData.toZeroOffsetISO8601Representation)
+        jobSchedule = Some(job.scheduleData.toStringRepresentation)
       case job: DependencyBasedJob =>
         jobParents = Some(job.parents.asJava)
     }
@@ -434,7 +434,7 @@ class JobStats @Inject()(clusterBuilder: Option[Cluster.Builder], config: Cassan
     var jobParents:Option[java.util.Set[String]] = None
     job match {
       case job: InternalScheduleBasedJob =>
-        jobSchedule = Some(job.scheduleData.toZeroOffsetISO8601Representation)
+        jobSchedule = Some(job.scheduleData.toStringRepresentation)
       case job: DependencyBasedJob =>
         jobParents = Some(job.parents.asJava)
     }

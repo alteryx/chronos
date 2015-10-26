@@ -289,16 +289,18 @@ class JobScheduler @Inject()(val scheduleHorizon: Period,
           val streamForJob = streams.find(_.jobName == job.name)
 
           streamForJob.foreach { stream =>
-            stream.schedule.recurrences.foreach { recurRemaining =>
-              if (recurRemaining == 0) {
-                log.info("Disabling job that reached a zero-recurrence count!")
+            stream.schedule match {
+              case Iso8601Schedule(_,_,_,_,_,Some(recurRemaining),_) =>
+                if (recurRemaining == 0) {
+                  log.info("Disabling job that reached a zero-recurrence count!")
 
-                val disabledJob = scheduleBasedJob.copy(disabled = true)
-                jobsObserver.apply(JobDisabled(job, """Job '%s' has exhausted all of its recurrences and has been disabled.
-                                                      |Please consider either removing your job, or updating its schedule and re-enabling it.
-                                                    """.stripMargin.format(job.name)))
-                replaceJob(scheduleBasedJob, disabledJob)
-              }
+                  val disabledJob = scheduleBasedJob.copy(disabled = true)
+                  jobsObserver.apply(JobDisabled(job, """Job '%s' has exhausted all of its recurrences and has been disabled.
+                                                        |Please consider either removing your job, or updating its schedule and re-enabling it.
+                                                      """.stripMargin.format(job.name)))
+                  replaceJob(scheduleBasedJob, disabledJob)
+                }
+              case _ =>
             }
           }
         case _ =>
